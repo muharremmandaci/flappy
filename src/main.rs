@@ -2,9 +2,9 @@
 
 use bracket_lib::prelude::*;
 
-const SCREEN_WIDTH: i32 = 80;
-const SCREEN_HEIGHT: i32 = 50;
-const FRAME_DURATION: f32 = 75.0;
+const SCREEN_WIDTH: i32 = 1280/8;
+const SCREEN_HEIGHT: i32 = 720/8;
+const FRAME_DURATION: f32 = 33.33;
 
 enum GameMode {
     Menu,
@@ -159,11 +159,11 @@ impl Player {
     }
 
     fn gravity_and_move(&mut self) {
-        if self.velocity < 2.0 {
-            self.velocity += 0.1;
+        if self.velocity < 5.0 {
+            self.velocity += 0.5;
         }
 
-        self.x += 1;
+        self.x += 2;
         self.y += self.velocity as i32; // Explicitly cast self.velocity to i32
 
         if self.y < 0 {
@@ -172,7 +172,7 @@ impl Player {
     }
 
     fn flap(&mut self) {
-        self.velocity = -2.0;
+        self.velocity = -5.0;
     }
 }
 
@@ -187,7 +187,8 @@ impl GameState for State {
 }
 
 fn main() -> BError {
-    let context = BTermBuilder::simple80x50()
+    let context = BTermBuilder::simple(SCREEN_WIDTH, SCREEN_HEIGHT)?
+        //.with_fullscreen(true)
         .with_title("Flappy Dragon")
         .build()?;
 
