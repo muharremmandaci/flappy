@@ -2,9 +2,9 @@
 
 use bracket_lib::prelude::*;
 
-const SCREEN_WIDTH: i32 = 1280/8;
-const SCREEN_HEIGHT: i32 = 720/8;
-const FRAME_DURATION: f32 = 33.33;
+const SCREEN_WIDTH: i32 = 1280/16;
+const SCREEN_HEIGHT: i32 = 720/16;
+const FRAME_DURATION: f32 = 16.66;
 
 enum GameMode {
     Menu,
@@ -12,11 +12,7 @@ enum GameMode {
     End,
 }
 
-struct Player {
-    x: i32,
-    y: i32,
-    velocity: f32,
-}
+
 struct State {
     player: Player,
     frame_time: f32,
@@ -64,9 +60,14 @@ impl State {
             self.player.flap();
         }
 
+        ctx.set_active_console(1);
+        ctx.cls();
         self.player.render(ctx);
+        ctx.set_active_console(0);
+
         ctx.print(0, 0, "Press SPACE to flap");
         ctx.print(0, 1, &format!("Score: {}", self.score));
+
         self.obstacle.render(ctx, self.player.x);
 
         if self.player.x > self.obstacle.x {
@@ -96,7 +97,7 @@ impl State {
     }
 
     fn restart(&mut self) {
-        self.player = Player::new(5, 25);
+        self.player = Player::new(2, 25);
         self.frame_time = 0.0;
         self.mode = GameMode::Playing;
         self.obstacle = Obstacle::new(SCREEN_WIDTH, 0);
@@ -126,12 +127,12 @@ impl Obstacle {
 
         // Draw the top half of the obstacle
         for y in 0..self.gap_y - half_size {
-            ctx.set(screen_x, y, RED, BLACK, to_cp437('|'));
+            ctx.set(screen_x, y, GRAY, BLACK, 179);
         }
 
         // Draw the bottom half of the obstacle
         for y in self.gap_y + half_size..SCREEN_HEIGHT {
-            ctx.set(screen_x, y, RED, BLACK, to_cp437('|'));
+            ctx.set(screen_x, y, GRAY, BLACK, 179/*to_cp437('|')*/);
         }
     }
 
@@ -145,34 +146,47 @@ impl Obstacle {
     }
 }
 
+struct Player {
+    x: i32,
+    y: i32,
+    velocity: f32,
+    frames : [u16; 6],
+    current_frame: usize ,
+}
+
 impl Player {
     fn new(x: i32, y: i32) -> Self {
         Player {
             x,
             y,
             velocity: 0.0,
+            frames :  [ 64, 1, 2, 3, 2, 1 ],
+            current_frame : 0,
         }
     }
 
     fn render(&mut self, ctx: &mut BTerm) {
-        ctx.set(0, self.y, YELLOW, BLACK, to_cp437('@'));
+        //ctx.set(0, self.y, YELLOW, BLACK, to_cp437('@'));
+        ctx.set_fancy(PointF::new(2.0, self.y as f32), 1, Degrees::new(0.0), PointF::new(2.0, 2.0), WHITE, NAVY, self.frames[self.current_frame]);
     }
 
     fn gravity_and_move(&mut self) {
-        if self.velocity < 5.0 {
+        if self.velocity < 1.0 {
             self.velocity += 0.5;
         }
 
-        self.x += 2;
+        self.x += 1;
         self.y += self.velocity as i32; // Explicitly cast self.velocity to i32
 
         if self.y < 0 {
             self.y = 0;
         }
+
+        self.current_frame = (self.current_frame + 1) % 6; 
     }
 
     fn flap(&mut self) {
-        self.velocity = -5.0;
+        self.velocity = -4.0;
     }
 }
 
@@ -187,10 +201,15 @@ impl GameState for State {
 }
 
 fn main() -> BError {
-    let context = BTermBuilder::simple(SCREEN_WIDTH, SCREEN_HEIGHT)?
+    let context = BTermBuilder::new()
+        .with_simple_console(SCREEN_WIDTH, SCREEN_HEIGHT, "C:\\Users\\muhar\\Desktop\\RustGames\\flappy\\assets\\flappy32.png")
+        .with_fancy_console(SCREEN_WIDTH, SCREEN_HEIGHT,"C:\\Users\\muhar\\Desktop\\RustGames\\flappy\\assets\\flappy32.png")
         //.with_fullscreen(true)
+        .with_font("C:\\Users\\muhar\\Desktop\\RustGames\\flappy\\assets\\flappy32.png", 32, 32)
         .with_title("Flappy Dragon")
+        .with_tile_dimensions(16, 16)
         .build()?;
+
 
     main_loop(context, State::new())
 }
